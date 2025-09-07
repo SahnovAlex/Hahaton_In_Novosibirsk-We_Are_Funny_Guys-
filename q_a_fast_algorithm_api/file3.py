@@ -190,7 +190,7 @@ def handle_user_input(user_input: str, current_context: dict, history: list) -> 
 
     best_idx, best_score = scored[0]
     proc_corr = correct_spelling(preprocess(user_input), DOMAIN_TERMS)
-    total_kw, overlap_kw = domain_overlap_stats(proc_corr)
+    _, overlap_kw = domain_overlap_stats(proc_corr)
     short_query = len([w for w in proc_corr.split() if w not in RU_STOPWORDS]) <= SHORT_QUERY_MAX_TOKENS
     min_required = 1 if short_query else 2
     has_domain_overlap = overlap_kw >= min_required
@@ -207,15 +207,19 @@ def handle_user_input(user_input: str, current_context: dict, history: list) -> 
         indices_sorted = [i for i, s in scored if s >= CLARIFY_MIN]
         cleaned = clean_candidates(indices_sorted, processed_questions, max_variants=3)
         if len(cleaned) >= 2:
-            options_text = "\n".join([f"{i}. {questions[idx]}" for i, idx in enumerate(cleaned, 1)])
-            current_context = {'options': cleaned, 'original_question': user_input}
-            # return {"response": f"Уточните, пожалуйста, что именно вас интересует:\n{options_text}"}, current_context, history
+            idx = cleaned[0]
+            current_context = None
             return {
-                "success": 
+                "success": True,
+                "message": answers[idx],
+                "extra": sources[idx]
             }, current_context, history
 
     current_context = None
-    return {"response": "Похоже, вопрос вне тематики базы знаний или сформулирован слишком общо.\n"
-                        "Пожалуйста, переформулируйте вопрос или уточните термины."}, current_context, history
+    return {
+        "success": False,
+        "message": "Похоже, вопрос вне тематики базы знаний или сформулирован слишком общо.\nПожалуйста, переформулируйте вопрос или уточните термины",
+        "extra": ""
+    }, current_context, history
 
 print("\nСпасибо за использование системы!")
